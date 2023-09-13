@@ -6,6 +6,13 @@ from aiogram.contrib.middlewares.logging import LoggingMiddleware
 from aiogram.utils import executor
 import config
 
+# Import the necessary module for inline buttons
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
+
+# Create a button factory function
+def create_inline_button(text, callback_data):
+    return InlineKeyboardButton(text=text, callback_data=callback_data)
+
 bot = Bot(token=config.token)
 dp = Dispatcher(bot)
 logging.basicConfig(level=logging.INFO)
@@ -55,87 +62,107 @@ async def parse_currency():
 
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-    item_usd = types.KeyboardButton("KGS → USD")
-    item_euro = types.KeyboardButton("KGS → EURO")
-    item_rub = types.KeyboardButton("KGS → RUB")
-    item_kzt = types.KeyboardButton("KGS → KZT")
+    markup = InlineKeyboardMarkup()
+    
+    item_usd = create_inline_button("KGS → USD", "exchange_usd")
+    item_euro = create_inline_button("KGS → EURO", "exchange_euro")
+    item_rub = create_inline_button("KGS → RUB", "exchange_rub")
+    item_kzt = create_inline_button("KGS → KZT", "exchange_kzt")
+    
     markup.add(item_usd, item_euro, item_rub, item_kzt)
+    
     await message.answer("Выберите валюту для обмена:", reply_markup=markup)
 
-@dp.message_handler(lambda message: message.text.startswith("KGS → USD"))
-async def handle_exchange_usd(message: types.Message):
-    user_input = message.text
-    user_id = message.chat.id
+@dp.callback_query_handler(lambda callback_query: callback_query.data == "exchange_usd")
+async def handle_exchange_usd(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
 
     await update_currency_rates()
 
     if usd_rate != 'Не найдено':
-        await message.answer("Введите сумму в KGS для обмена на USD:")
-
+        await bot.send_message(user_id, "Введите сумму в KGS для обмена на USD:")
         @dp.message_handler(lambda message: message.text.isdigit())
         async def process_usd_amount(message: types.Message):
             kgs_amount = float(message.text)
             usd_amount = kgs_amount / float(usd_rate.replace(',', '.'))
             await message.answer(f"{kgs_amount} KGS = {usd_amount:.2f} USD (по курсу {usd_rate})")
     else:
-        await message.answer("Извините, данные о курсе USD временно недоступны.")
+        await bot.send_message(user_id, "Извините, данные о курсе USD временно недоступны.")
 
-@dp.message_handler(lambda message: message.text.startswith("KGS → EURO"))
-async def handle_exchange_euro(message: types.Message):
-    user_input = message.text
-    user_id = message.chat.id
+@dp.callback_query_handler(lambda callback_query: callback_query.data == "exchange_euro")
+async def handle_exchange_euro(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
 
     await update_currency_rates()
 
     if euro_rate != 'Не найдено':
-        await message.answer("Введите сумму в KGS для обмена на EURO:")
-
+        await bot.send_message(user_id, "Введите сумму в KGS для обмена на EURO:")
         @dp.message_handler(lambda message: message.text.isdigit())
         async def process_euro_amount(message: types.Message):
             kgs_amount = float(message.text)
             euro_amount = kgs_amount / float(euro_rate.replace(',', '.'))
             await message.answer(f"{kgs_amount} KGS = {euro_amount:.2f} EURO (по курсу {euro_rate})")
     else:
-        await message.answer("Извините, данные о курсе EURO временно недоступны.")
+        await bot.send_message(user_id, "Извините, данные о курсе EURO временно недоступны.")
 
-
-@dp.message_handler(lambda message: message.text.startswith("KGS → RUB"))
-async def handle_exchange_rub(message: types.Message):
-    user_input = message.text
-    user_id = message.chat.id
+@dp.callback_query_handler(lambda callback_query: callback_query.data == "exchange_rub")
+async def handle_exchange_rub(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
 
     await update_currency_rates()
 
     if rub_rate != 'Не найдено':
-        await message.answer("Введите сумму в KGS для обмена на RUB:")
-
+        await bot.send_message(user_id, "Введите сумму в KGS для обмена на RUB:")
         @dp.message_handler(lambda message: message.text.isdigit())
         async def process_rub_amount(message: types.Message):
             kgs_amount = float(message.text)
             rub_amount = kgs_amount / float(rub_rate.replace(',', '.'))
             await message.answer(f"{kgs_amount} KGS = {rub_amount:.2f} RUB (по курсу {rub_rate})")
     else:
-        await message.answer("Извините, данные о курсе RUB временно недоступны.")
+        await bot.send_message(user_id, "Извините, данные о курсе RUB временно недоступны.")
 
-
-@dp.message_handler(lambda message: message.text.startswith("KGS → KZT"))
-async def handle_exchange_kzt(message: types.Message):
-    user_input = message.text
-    user_id = message.chat.id
+@dp.callback_query_handler(lambda callback_query: callback_query.data == "exchange_kzt")
+async def handle_exchange_kzt(callback_query: types.CallbackQuery):
+    user_id = callback_query.from_user.id
 
     await update_currency_rates()
 
     if kzt_rate != 'Не найдено':
-        await message.answer("Введите сумму в KGS для обмена на KZT:")
-        
+        await bot.send_message(user_id, "Введите сумму в KGS для обмена на KZT:")
         @dp.message_handler(lambda message: message.text.isdigit())
         async def process_kzt_amount(message: types.Message):
             kgs_amount = float(message.text)
             kzt_amount = kgs_amount / float(kzt_rate.replace(',', '.'))
             await message.answer(f"{kgs_amount} KGS = {kzt_amount:.2f} KZT (по курсу {kzt_rate})")
     else:
-        await message.answer("Извините, данные о курсе KZT временно недоступны.")
+        await bot.send_message(user_id, "Извините, данные о курсе KZT временно недоступны.")
 
+@dp.message_handler(lambda message: message.text.startswith("KGS → USD"))
+async def handle_exchange_usd_input(message: types.Message):
+    user_id = message.chat.id
+    if usd_rate != 'Не найдено':
+        # Handle the user input for USD exchange here
+        pass
+
+@dp.message_handler(lambda message: message.text.startswith("KGS → EURO"))
+async def handle_exchange_euro_input(message: types.Message):
+    user_id = message.chat.id
+    if euro_rate != 'Не найдено':
+        # Handle the user input for EURO exchange here
+        pass
+
+@dp.message_handler(lambda message: message.text.startswith("KGS → RUB"))
+async def handle_exchange_rub_input(message: types.Message):
+    user_id = message.chat.id
+    if rub_rate != 'Не найдено':
+        # Handle the user input for RUB exchange here
+        pass
+
+@dp.message_handler(lambda message: message.text.startswith("KGS → KZT"))
+async def handle_exchange_kzt_input(message: types.Message):
+    user_id = message.chat.id
+    if kzt_rate != 'Не найдено':
+        # Handle the user input for KZT exchange here
+        pass
 
 executor.start_polling(dp, skip_updates=True)
